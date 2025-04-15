@@ -1,0 +1,10 @@
+pyodbc
+pandas
+datetime
+os
+glob2
+time
+logging
+streamlit
+plotly
+prophet
