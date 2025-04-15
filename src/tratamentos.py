@@ -9,7 +9,7 @@ import logging
 # Configuração do logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# Dicionário de correções dos meses com erros ortográficos comuns
+# Correções dos erros ortográficos
 correcoes_meses = {
     'Fevreiro': 'Fevereiro',
     'Maiu': 'Maio',
@@ -38,22 +38,18 @@ def conectar_banco():
 
 def tratar_dados(df):
     try:
-        # Verificar se as colunas essenciais existem
         for col in ['Mes', 'Ano', 'Vendas']:
             if col not in df.columns:
                 raise ValueError(f"Coluna essencial '{col}' não encontrada!")
 
         df = df.copy()
 
-        # Corrigir e padronizar os meses
         df['Mes'] = df['Mes'].replace(correcoes_meses).str.capitalize()
         meses_validos = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
                          'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
-        # Se o valor não estiver na lista, registra um aviso e seta como NaN
         df['Mes'] = df['Mes'].apply(lambda x: x if x in meses_validos else None)
         if df['Mes'].isnull().any():
             logging.warning("Alguns valores de 'Mes' não são válidos. Verifique os dados de entrada.")
-            # Preenchendo valores inválidos com um valor padrão (por exemplo, 'Janeiro')
             df['Mes'] = df['Mes'].fillna('Janeiro')
         # Ordenar os meses corretamente
         df['Mes'] = pd.Categorical(df['Mes'], categories=meses_validos, ordered=True)
@@ -62,12 +58,10 @@ def tratar_dados(df):
         df['Vendas'] = pd.to_numeric(df['Vendas'], errors='coerce').fillna(0)
         df['Vendas'] = df['Vendas'].apply(lambda x: max(0, x)).astype(int)
 
-        # Tratar publicidade: converter para numérico e garantir apenas 0 ou 1
         df['Publicidade'] = pd.to_numeric(df.get('Publicidade', 0), errors='coerce').fillna(0).astype(int)
         df['Publicidade'] = df['Publicidade'].apply(lambda x: 1 if x == 1 else 0)
 
-        # Criar a coluna 'Data' a partir de Ano e Mes
-        # Utilizamos (cat.codes + 1) pois 'Janeiro' tem código 0, 'Fevereiro' 1, etc.
+        # Criar a coluna 'Data' 
         df['Data'] = pd.to_datetime(
             df['Ano'].astype(str) + '-' + (df['Mes'].cat.codes + 1).astype(str) + '-01',
             errors='coerce'
@@ -108,7 +102,6 @@ def main():
         return
 
     try:
-        # Carregar dados do banco
         df = pd.read_sql("SELECT * FROM VendasMacarrao", conn)
         conn.close()
         logging.info(f"Arquivo lido. Total de linhas lidas: {len(df)}")

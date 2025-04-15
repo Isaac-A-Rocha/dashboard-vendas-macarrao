@@ -5,14 +5,14 @@ import glob
 import os
 from datetime import datetime
 
-# Import para forecasting
+
 try:
     from prophet import Prophet
     has_prophet = True
 except ImportError:
     has_prophet = False
 
-# Mapeamento global de meses
+
 MESES_MAP = {
     'Janeiro': 1, 'Fevereiro': 2, 'Março': 3, 'Abril': 4, 'Maio': 5,
     'Junho': 6, 'Julho': 7, 'Agosto': 8, 'Setembro': 9, 'Outubro': 10,
@@ -20,9 +20,8 @@ MESES_MAP = {
 }
 REVERSE_MESES_MAP = {v: k for k, v in MESES_MAP.items()}
 
-# Configurações de cache
+
 def load_data(pattern):
-    """Carrega o CSV mais recente que corresponde ao padrão informado."""
     files = glob.glob(pattern)
     if not files:
         return None
@@ -35,7 +34,6 @@ def get_data():
     if df is None:
         return None
     df = df.copy()
-    # Converter Mes para código e criar Data
     df['MesCodigo'] = df['Mes'].map(MESES_MAP)
     df['Data'] = pd.to_datetime(df['Ano'].astype(str) + '-' + df['MesCodigo'].astype(str) + '-01', errors='coerce')
     df['Publicidade'] = df['Publicidade'].fillna(0).astype(int)
@@ -47,17 +45,14 @@ def train_prophet(ts_df):
     m.fit(ts_df)
     return m
 
-# Carrega e valida dados
 df = get_data()
 if df is None:
     st.error("❌ Nenhum arquivo CSV encontrado na pasta Data.")
     st.stop()
 
-# Sidebar de filtros
 st.sidebar.header("🎛️ Filtros")
 with st.sidebar.expander("Seleção de Período", expanded=True):
     anos = sorted(df['Ano'].unique())
-    # Meses disponíveis, na ordem natural
     meses_disponiveis = [m for m in MESES_MAP.keys() if MESES_MAP[m] in df['MesCodigo'].unique()]
     ano_sel = st.selectbox("Ano", anos, index=len(anos)-1)
     mes_sel_nome = st.selectbox("Mês", meses_disponiveis, index=len(meses_disponiveis)-1)
@@ -74,7 +69,7 @@ if has_prophet:
 else:
     st.sidebar.info("📦 Instale prophet para habilitar forecasting.")
 
-# Filtrar dados
+
 filtered = df[(df['Ano'] == ano_sel) & (df['MesCodigo'] == mes_sel)]
 all_month = df[df['MesCodigo'] == mes_sel]
 
@@ -91,7 +86,6 @@ def main():
     csv = filtered.drop(columns=['MesCodigo']).to_csv(index=False).encode('utf-8')
     st.download_button("⬇️ Baixar CSV", data=csv, file_name=f"vendas_{ano_sel}_{mes_sel_nome}.csv")
 
-    # KPIs e Estatísticas
     total = filtered['Vendas'].sum()
     mean = filtered['Vendas'].mean()
     prev_year = df[(df['Ano'] == ano_sel-1) & (df['MesCodigo'] == mes_sel)]['Vendas'].sum() or 0
@@ -101,7 +95,6 @@ def main():
     col2.metric("Média de Vendas", f"R${mean:,.2f}")
     col3.metric("Variação YoY", f"{yoy:.1f}%" if yoy is not None else "-")
 
-    # Insight automático
     pub_vals = filtered[filtered['Publicidade'] == 1]['Vendas']
     no_vals = filtered[filtered['Publicidade'] == 0]['Vendas']
     if not pub_vals.empty and not no_vals.empty:
@@ -114,23 +107,21 @@ def main():
     else:
         st.markdown("**Insight:** Dados insuficientes para gerar insight de publicidade.")
 
-    # Gráficos
+    
     st.subheader("🔹 Análises Gráficas")
-    # Comparativo Publicidade vs Não
     if chart_type == 'Boxplot':
         fig_comp = px.box(all_month, x='Publicidade', y='Vendas', points='all', title='Comparativo Publicidade vs Não')
     else:
         fig_comp = px.violin(all_month, x='Publicidade', y='Vendas', points='all', title='Comparativo Publicidade vs Não')
     st.plotly_chart(fig_comp, use_container_width=True)
 
-    # Vendas empilhadas
     if show_stacked:
         st.subheader("🔹 Vendas por Ano (Publicidade vs Não)")
         df_stack = all_month.groupby(['Ano', 'Publicidade'])['Vendas'].sum().reset_index()
         fig_stack = px.bar(df_stack, x='Ano', y='Vendas', color='Publicidade', title='Vendas Empilhadas por Publicidade')
         st.plotly_chart(fig_stack, use_container_width=True)
 
-    # Série Temporal
+   
     st.subheader("🔹 Série Temporal de Vendas Mensais")
     ts = df.groupby('Data')['Vendas'].sum().reset_index()
     fig_ts = px.line(ts, x='Data', y='Vendas', markers=True, title='Vendas Mensais (2018-2024)')

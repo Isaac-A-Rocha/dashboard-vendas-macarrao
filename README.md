@@ -56,7 +56,7 @@ pip install -r requirements.txt
 
 1. Clone o repositório:
    ```bash
-   git clone https://github.com/seu-usuario/dashboard-vendas-macarrao.git
+   git clone https://github.com/Isaac-A-Rocha/dashboard-vendas-macarrao.git
    cd dashboard-vendas-macarrao
    ```
 
@@ -88,6 +88,6 @@ pip install -r requirements.txt
 ## 👨‍💼 Autor
 
 **Isaac A. Rocha**  
-🔗 [LinkedIn](https://www.linkedin.com/in/seu-perfil)  
+🔗 [LinkedIn](www.linkedin.com/in/isaac-alves-2980152b8)  
 🍝 Projeto desenvolvido para estudo e apresentação de dados reais de vendas.
 
